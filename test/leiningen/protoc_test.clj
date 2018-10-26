@@ -57,6 +57,7 @@
 (t/deftest get-jar-fs-test
   (t/testing "Can open the same JAR twice"
     (let [path (lp/jar-uri "dev-resources/empty.jar")]
-      (with-open [proto-jar-fs ^java.nio.file.FileSystem (lp/get-jar-fs path)]
-        (with-open [second-proto-jar-fs ^java.nio.file.FileSystem (lp/get-jar-fs path)]
-          (t/is (= proto-jar-fs second-proto-jar-fs)))))))
+      (let [proto-jar-fs ^java.nio.file.FileSystem (lp/get-jar-fs path)]
+        (let [second-proto-jar-fs ^java.nio.file.FileSystem (lp/get-jar-fs path)]
+          (t/is (= proto-jar-fs second-proto-jar-fs) "...and the second open is identical to the first"))
+        (t/is (.isOpen proto-jar-fs) "...and they don't get closed too early")))))

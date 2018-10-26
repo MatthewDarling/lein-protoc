@@ -258,31 +258,31 @@
 
 (defn unpack-jar!
   [proto-jar proto-path]
-  (with-open [proto-jar-fs ^java.nio.file.FileSystem (get-jar-fs (jar-uri proto-jar))]
-    (let [proto-file-matcher (.getPathMatcher proto-jar-fs (str "glob:" proto-path "**.proto"))
-          src-path (.getPath proto-jar-fs "/" (vargs String))
-          tgt-path (Files/createTempDirectory
-                     "lein-protoc"
-                     (vargs FileAttribute))
-          tgt-file (.toFile tgt-path)]
-      (.deleteOnExit tgt-file)
-      (Files/walkFileTree
-        src-path
-        (proxy [SimpleFileVisitor] []
-          (preVisitDirectory [dir-path attrs]
-            (when (.startsWith dir-path proto-path)
-              (let [target-dir (resolve-mismatched tgt-path src-path dir-path)]
-                (when (Files/notExists target-dir (vargs LinkOption))
-                  (Files/createDirectories target-dir (vargs FileAttribute))
-                  (-> target-dir .toFile .deleteOnExit))))
-            FileVisitResult/CONTINUE)
-          (visitFile [file attrs]
-            (when (.matches proto-file-matcher file)
-              (let [tgt-file-path (resolve-mismatched tgt-path src-path file)]
-                (Files/copy file tgt-file-path (vargs CopyOption))
-                (-> tgt-file-path .toFile .deleteOnExit)))
-            FileVisitResult/CONTINUE)))
-      tgt-file)))
+  (let [proto-jar-fs ^java.nio.file.FileSystem (get-jar-fs (jar-uri proto-jar))
+        proto-file-matcher (.getPathMatcher proto-jar-fs (str "glob:" proto-path "**.proto"))
+        src-path (.getPath proto-jar-fs "/" (vargs String))
+        tgt-path (Files/createTempDirectory
+                  "lein-protoc"
+                  (vargs FileAttribute))
+        tgt-file (.toFile tgt-path)]
+    (.deleteOnExit tgt-file)
+    (Files/walkFileTree
+     src-path
+     (proxy [SimpleFileVisitor] []
+       (preVisitDirectory [dir-path attrs]
+         (when (.startsWith dir-path proto-path)
+           (let [target-dir (resolve-mismatched tgt-path src-path dir-path)]
+             (when (Files/notExists target-dir (vargs LinkOption))
+               (Files/createDirectories target-dir (vargs FileAttribute))
+               (-> target-dir .toFile .deleteOnExit))))
+         FileVisitResult/CONTINUE)
+       (visitFile [file attrs]
+         (when (.matches proto-file-matcher file)
+           (let [tgt-file-path (resolve-mismatched tgt-path src-path file)]
+             (Files/copy file tgt-file-path (vargs CopyOption))
+             (-> tgt-file-path .toFile .deleteOnExit)))
+         FileVisitResult/CONTINUE)))
+    tgt-file))
 
 (defn resolve-classpath-jar-for-dep
   [project dep]
